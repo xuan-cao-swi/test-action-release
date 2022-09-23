@@ -37,7 +37,7 @@ jobs:
           script: |
             github.repos.createRelease({
               owner: "xuan-cao-swi",
-              repo: "appoptics-apm-ruby",
+              repo: "test-action-release",
               body: "SHA256 checksum: asdfghjkl",
               tag_name: "0.0.2",
               name: "0.0.2",
