@@ -16,7 +16,6 @@ jobs:
       - uses: uraimo/run-on-arch-action@v2
         name: Run commands
         id: runcmd
-        working-directory: .github/workflows/
         with:
           arch: aarch64
           distro: ubuntu22.04
@@ -24,4 +23,4 @@ jobs:
           run: |
             sleep 1
             gem install solarwinds_apm
-            ruby ./scripts/verify_install.rb
+            ruby ./.github/workflows/scripts/verify_install.rb
