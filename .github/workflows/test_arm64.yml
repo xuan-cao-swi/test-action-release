@@ -40,15 +40,16 @@ jobs:
       - uses: actions/checkout@v2
       - uses: uraimo/run-on-arch-action@v2
         name: Setup image
+        id: runcmd
         with:
           arch: aarch64
           distro: ${{ matrix.os }}
           run: |
-            uname -a
-            echo ::set-output name=uname::$(uname -a)
+            awk -F= '$1=="ID" { print $2 ;}' /etc/os-release
+            echo ::set-output name=ostype::$(awk -F= '$1=="ID" { print $2 ;}' /etc/os-release)
 
       - name: Verify Install
-        if: ${{ matrix.os }} == 'alpine_latest'
+        if: ${{ steps.runcmd.outputs.ostype }} == 'alpine'
         run: |
           sleep 1
           apk --update add ruby ruby-dev build-base nodejs tzdata postgresql-dev postgresql-client libxslt-dev libxml2-dev imagemagick
@@ -57,7 +58,7 @@ jobs:
           ruby ./.github/workflows/scripts/verify_install.rb
 
       - name: Verify Install
-        if: ${{ matrix.os }} != 'alpine_latest' 
+        if: ${{ steps.runcmd.outputs.ostype }} != 'alpine'
         run: |
           sleep 1
           apt update && apt install -y ruby ruby-dev libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev
