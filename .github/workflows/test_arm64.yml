@@ -22,5 +22,7 @@ jobs:
 
           run: |
             sleep 1
+            apt update
+            apt install -y ruby ruby-dev libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev
             gem install solarwinds_apm
             ruby ./.github/workflows/scripts/verify_install.rb
