@@ -24,11 +24,9 @@ jobs:
         working-directory: .github/workflows/
         run: |
           sleep 1
-          apt update
-          apt install -y ruby ruby-dev libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev
           gem install solarwinds_apm
-          ruby ./scripts/test_install.rb
-
+          ruby ./scripts/verify_install.rb
+          
   all_arm64_verify_install_test:
     name: ruby - ${{ matrix.os }} on arm64
     runs-on: ubuntu-latest
@@ -41,17 +39,28 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: uraimo/run-on-arch-action@v2
-        name: Verify Install
+        name: Setup image
         with:
           arch: aarch64
           distro: ${{ matrix.os }}
-          run: |
-            sleep 1
-            apt update
-            apt install -y ruby ruby-dev libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev
-            ruby -v
-            gem install solarwinds_apm
-            ruby ./.github/workflows/scripts/verify_install.rb
+
+      - name: Verify Install
+        if: ${{ matrix.os == "alpine_latest" }}
+        run: |
+          sleep 1
+          apk --update add ruby ruby-dev build-base nodejs tzdata postgresql-dev postgresql-client libxslt-dev libxml2-dev imagemagick
+          ruby -v
+          gem install solarwinds_apm
+          ruby ./.github/workflows/scripts/verify_install.rb
+
+      - name: Verify Install
+        if: ${{ matrix.os != "alpine_latest" }}
+        run: |
+          sleep 1
+          apt update && apt install -y ruby ruby-dev libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev
+          ruby -v
+          gem install solarwinds_apm
+          ruby ./.github/workflows/scripts/verify_install.rb
 
 
 
