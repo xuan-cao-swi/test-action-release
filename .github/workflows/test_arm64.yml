@@ -43,6 +43,9 @@ jobs:
         with:
           arch: aarch64
           distro: ${{ matrix.os }}
+          run: |
+            uname -a
+            echo ::set-output name=uname::$(uname -a)
 
       - name: Verify Install
         if: ${{ matrix.os }} == 'alpine_latest'
