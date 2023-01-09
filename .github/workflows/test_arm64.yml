@@ -126,7 +126,7 @@ jobs:
           arch: aarch64
           distro: ${{ matrix.os }}
           run: |
-            ./.github/workflows/scripts/_helper_run_install_tests.sh
+            cd .github/workflows/ && ./scripts/_helper_run_install_tests.sh
           shell: sh
           env:
             MODE: ${{ github.event.inputs.install-registry }}
