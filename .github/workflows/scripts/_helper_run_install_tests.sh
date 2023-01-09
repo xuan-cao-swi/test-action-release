@@ -12,6 +12,8 @@
 # stop on error
 set -e
 
+echo "Install solarwinds_apm version: $SOLARWINDS_APM_VERSION"
+
 # setup dependencies quietly
 {
     if grep Alpine /etc/os-release; then

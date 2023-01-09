@@ -130,6 +130,7 @@ jobs:
           distro: ${{ matrix.os }}
           run: |
             ./.github/workflows/scripts/_helper_run_install_tests.sh
+          # shell: sh # this will change a lot, don't use
           env: |
             MODE: ${{ github.event.inputs.install-registry }}
             ARITCH: ARM
