@@ -16,6 +16,9 @@ on:
         required: false
         description: 'This is required for source from packagecloud'
 
+env:
+  SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
+
 jobs:
 
   # debian_amd64_verify_install_test:
@@ -127,7 +130,6 @@ jobs:
           distro: ${{ matrix.os }}
           run: |
             ./.github/workflows/scripts/_helper_run_install_tests.sh
-          shell: sh
           env: |
             MODE: ${{ github.event.inputs.install-registry }}
             ARITCH: ARM
