@@ -2,9 +2,43 @@ name: Verify Installation
 
 on:
   workflow_dispatch:
+    inputs:
+      install-registry:
+        required: true
+        description: 'Registry used for install tests, e.g. RubyGem, packagecloud'
+        type: choice
+        default: 'RubyGem'
+        options:
+        - RubyGem
+        - packagecloud
 
+      solarwinds-version:
+        required: false
+        description: 'This is required for source from packagecloud'
 
 jobs:
+
+  # debian_amd64_verify_install_test:
+  #   name: ruby - ${{ matrix.os }} on amd64
+  #   runs-on: ubuntu-latest
+
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [3.1.3-bullseye, 2.7.7-bullseye]
+
+  #   container:
+  #     image: ruby:${{ matrix.os }}
+
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Setup and run install test
+  #       working-directory: .github/workflows/
+  #       run: |
+  #         sleep 1
+  #         gem install solarwinds_apm
+  #         ruby ./scripts/verify_install.rb
+
 
   debian_amd64_verify_install_test:
     name: ruby - ${{ matrix.os }} on amd64
@@ -22,79 +56,81 @@ jobs:
       - uses: actions/checkout@v2
       - name: Setup and run install test
         working-directory: .github/workflows/
-        run: |
-          sleep 1
-          gem install solarwinds_apm
-          ruby ./scripts/verify_install.rb
+        run: ./_helper_run_install_tests.sh
+        shell: sh
+        env:
+          MODE: ${{ github.event.inputs.install-registry }}
+          ARITCH: AMD
+          SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
-  alpine_amd64_verify_install_test:
+  # alpine_amd64_verify_install_test:
 
-    name: ruby - ${{ matrix.os }} on amd64
-    runs-on: ubuntu-latest
+  #   name: ruby - ${{ matrix.os }} on amd64
+  #   runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [3.1.3-alpine3.17, 2.7.7-alpine3.16]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [3.1.3-alpine3.17, 2.7.7-alpine3.16]
 
-    container:
-      image: ruby:${{ matrix.os }}
+  #   container:
+  #     image: ruby:${{ matrix.os }}
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup and run install test
-        working-directory: .github/workflows/
-        run: |
-          sleep 1
-          apk --update add ruby ruby-dev build-base nodejs tzdata postgresql-dev postgresql-client libxslt-dev libxml2-dev imagemagick
-          gem install solarwinds_apm
-          ruby ./scripts/verify_install.rb
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Setup and run install test
+  #       working-directory: .github/workflows/
+  #       run: |
+  #         sleep 1
+  #         apk --update add ruby ruby-dev build-base nodejs tzdata postgresql-dev postgresql-client libxslt-dev libxml2-dev imagemagick
+  #         gem install solarwinds_apm
+  #         ruby ./scripts/verify_install.rb
 
-  debian_arm64_verify_install_test:
-    name: ruby - ${{ matrix.os }} on arm64
-    runs-on: ubuntu-latest
+  # debian_arm64_verify_install_test:
+  #   name: ruby - ${{ matrix.os }} on arm64
+  #   runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [bullseye, ubuntu20.04, ubuntu22.04]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [bullseye, ubuntu20.04, ubuntu22.04]
 
-    steps:
-      - uses: actions/checkout@v2
-      - uses: uraimo/run-on-arch-action@v2
-        name: Verify Install
-        with:
-          arch: aarch64
-          distro: ${{ matrix.os }}
-          run: |
-            sleep 1
-            apt update && apt install -y ruby ruby-dev libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev
-            ruby -v
-            gem install solarwinds_apm
-            ruby ./.github/workflows/scripts/verify_install.rb
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: uraimo/run-on-arch-action@v2
+  #       name: Verify Install
+  #       with:
+  #         arch: aarch64
+  #         distro: ${{ matrix.os }}
+  #         run: |
+  #           sleep 1
+  #           apt update && apt install -y ruby ruby-dev libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev
+  #           ruby -v
+  #           gem install solarwinds_apm
+  #           ruby ./.github/workflows/scripts/verify_install.rb
 
-  alpine_arm64_verify_install_test:
-    name: ruby - ${{ matrix.os }} on arm64
-    runs-on: ubuntu-latest
+  # alpine_arm64_verify_install_test:
+  #   name: ruby - ${{ matrix.os }} on arm64
+  #   runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [alpine_latest]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [alpine_latest]
 
-    steps:
-      - uses: actions/checkout@v2
-      - uses: uraimo/run-on-arch-action@v2
-        name: Verify Install
-        with:
-          arch: aarch64
-          distro: ${{ matrix.os }}
-          run: |
-            sleep 1
-            apk --update add ruby ruby-dev build-base nodejs tzdata postgresql-dev postgresql-client libxslt-dev libxml2-dev imagemagick
-            ruby -v
-            gem install solarwinds_apm
-            ruby ./.github/workflows/scripts/verify_install.rb
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: uraimo/run-on-arch-action@v2
+  #       name: Verify Install
+  #       with:
+  #         arch: aarch64
+  #         distro: ${{ matrix.os }}
+  #         run: |
+  #           sleep 1
+  #           apk --update add ruby ruby-dev build-base nodejs tzdata postgresql-dev postgresql-client libxslt-dev libxml2-dev imagemagick
+  #           ruby -v
+  #           gem install solarwinds_apm
+  #           ruby ./.github/workflows/scripts/verify_install.rb
 
 
 
