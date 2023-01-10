@@ -44,7 +44,7 @@ jobs:
         shell: sh
         env:
           MODE: ${{ github.event.inputs.install-registry }}
-          ARITCH: AMD
+          ARCHITECTURE: AMD
 
   verify_install_arm64_test:
     name: ruby - ${{ matrix.os }} amd64 - ${{ github.event.inputs.solarwinds-version }}
@@ -66,7 +66,7 @@ jobs:
             ./.github/workflows/scripts/_helper_run_install_tests.sh
           env: |
             MODE: ${{ github.event.inputs.install-registry }}
-            ARITCH: ARM
+            ARCHITECTURE: ARM
             SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
             SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY }}
             SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR }}

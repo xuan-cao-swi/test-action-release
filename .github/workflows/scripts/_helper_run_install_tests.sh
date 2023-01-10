@@ -47,10 +47,10 @@ elif [ "$MODE" = "packagecloud" ]; then
     gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION" --source https://packagecloud.io/solarwinds/solarwinds-apm-ruby/
 fi
 
-if [ "$ARITCH" = "AMD" ]; then
+if [ "$ARCHITECTURE" = "AMD" ]; then
     echo "AMD"
     ruby ./scripts/test_install.rb
-elif [ "$ARITCH" = "ARM" ]; then
+elif [ "$ARCHITECTURE" = "ARM" ]; then
     echo "ARM"
     ruby ./.github/workflows/scripts/test_install.rb
 fi
