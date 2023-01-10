@@ -45,7 +45,7 @@ echo "Install solarwinds_apm version: $SOLARWINDS_APM_VERSION"
 
 if [ "$MODE" = "RubyGem" ]; then
     echo "RubyGem"
-    gem install solarwinds_apm
+    gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION"
 elif [ "$MODE" = "packagecloud" ]; then
     echo "packagecloud"
     gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION" --source https://packagecloud.io/solarwinds/solarwinds-apm-ruby/

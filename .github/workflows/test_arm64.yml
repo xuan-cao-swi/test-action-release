@@ -13,13 +13,13 @@ on:
         - packagecloud
 
       solarwinds-version:
-        required: false
-        description: 'This is required for source from packagecloud'
+        required: true
+        description: 'Required solarwinds apm version'
 
 env:
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
   SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY }}
-  SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR}}
+  SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR }}
   PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
 
 jobs:
