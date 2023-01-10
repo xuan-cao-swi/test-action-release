@@ -45,7 +45,6 @@ jobs:
         env:
           MODE: ${{ github.event.inputs.install-registry }}
           ARITCH: AMD
-          SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
   verify_install_arm64_test:
     name: ruby - ${{ matrix.os }} on arm64
@@ -54,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [bullseye, ubuntu20.04, ubuntu22.04, alpine_latest]
+        os: [bullseye, ubuntu20.04, ubuntu18.04, alpine_latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -68,7 +67,10 @@ jobs:
           env: |
             MODE: ${{ github.event.inputs.install-registry }}
             ARITCH: ARM
-            
+            SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
+            SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY_PROD }}
+            SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR_PROD}}
+            PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
 
 
 
