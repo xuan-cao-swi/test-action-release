@@ -25,7 +25,7 @@ env:
 jobs:
 
   verify_install_amd64_test:
-    name: ruby - ${{ matrix.os }} on amd64
+    name: ruby - ${{ matrix.os }} on amd64 with ${{ github.event.inputs.solarwinds-version }}
     runs-on: ubuntu-latest
 
     strategy:
