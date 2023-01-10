@@ -14,7 +14,7 @@ on:
 
       solarwinds-version:
         required: true
-        description: 'Required solarwinds apm version'
+        description: 'Solarwinds apm version'
 
 env:
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
@@ -25,7 +25,7 @@ env:
 jobs:
 
   verify_install_amd64_test:
-    name: ruby - ${{ matrix.os }} on amd64 with ${{ github.event.inputs.solarwinds-version }}
+    name: ruby - ${{ matrix.os }} amd64 - ${{ github.event.inputs.solarwinds-version }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -47,7 +47,7 @@ jobs:
           ARITCH: AMD
 
   verify_install_arm64_test:
-    name: ruby - ${{ matrix.os }} on arm64
+    name: ruby - ${{ matrix.os }} amd64 - ${{ github.event.inputs.solarwinds-version }}
     runs-on: ubuntu-latest
 
     strategy:
