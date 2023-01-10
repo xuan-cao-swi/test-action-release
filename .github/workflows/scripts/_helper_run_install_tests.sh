@@ -36,6 +36,15 @@ echo "Install solarwinds_apm version: $SOLARWINDS_APM_VERSION"
             echo "ERROR: Testing on Debian < 11 not supported."
             exit 1
         fi
+    elif  grep rhel /etc/os-release; then
+        debain_version=$(grep VERSION_ID /etc/os-release | sed 's/VERSION_ID="//' | sed 's/"//')
+        if [ "$debain_version" = "11" ] || [ "$debain_version" = "12" ]; then
+            yum update -y && yum install -y ruby ruby-devel gcc gcc-c++ make
+            # libyaml-devel libffi-devel openssl-devel make bzip2 autoconf automake libtool bison curl sqlite-devel -y
+        else
+            echo "ERROR: Testing on Debian < 11 not supported."
+            exit 1
+        fi
     fi
 } >/dev/null
 
