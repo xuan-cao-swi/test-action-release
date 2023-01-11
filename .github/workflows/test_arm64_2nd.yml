@@ -67,7 +67,7 @@ jobs:
         run: |
           sudo docker run \
             --platform linux/arm64 \
-            -e RUBY_VERSION=${{ matrix.ruby_version }}
+            -e RUBY_VERSION=${{ matrix.ruby_version }} \
             -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
             -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
             -e SOLARWINDS_APM_VERSION=${{ github.event.inputs.solarwinds-version }} \
