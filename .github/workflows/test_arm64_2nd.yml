@@ -1,4 +1,4 @@
-name: Verify Installation
+name: Verify Installation Direct Approach
 
 on:
   workflow_dispatch:
