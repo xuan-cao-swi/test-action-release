@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 apt update && apt install build-essential git-core curl zlib1g-dev -y
 
