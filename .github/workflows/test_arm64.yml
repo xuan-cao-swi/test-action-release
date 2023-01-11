@@ -116,15 +116,16 @@ jobs:
         run: |
           sudo docker run \
             --platform linux/arm64 \
-            -e CI=$CI \
             -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
             -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
-            -v $(pwd):/tmp \
+            -v $(pwd):/home \
             --rm arm64v8/ruby:3.2.0-bullseye \
-            -- 'ls -al'      
+            ls -al /home
+                  
     # -- 'gem install solarwinds_apm -v "${{ github.event.inputs.solarwinds-version }}" --source https://packagecloud.io/solarwinds/solarwinds-apm-ruby/ && ruby ./.github/workflows/scripts/test_install.rb'
 
-
+    # docker run --rm debian:latest echo test
+    # docker run --platform=linux/amd64 -v $(pwd):/home --rm debian:latest ./home/sample.sh
 
 
 
