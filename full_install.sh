@@ -15,7 +15,6 @@ echo 'alias be="bundle exec"' >> ~/.profile
 
 . ~/.profile \
     && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
-    && rbenv install 3.0.3 \
     && rbenv install 3.1.0
 
 rbenv local $RUBY_VERSION
