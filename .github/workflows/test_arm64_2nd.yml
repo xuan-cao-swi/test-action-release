@@ -68,7 +68,7 @@ jobs:
             --platform linux/arm64 \
             -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
             -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
-            -e SOLARWINDS_APM_VERSION= ${{ github.event.inputs.solarwinds-version }} \
+            -e SOLARWINDS_APM_VERSION=${{ github.event.inputs.solarwinds-version }} \
             -e PACKAGECLOUD_TOKEN=${{ secrets.PACKAGECLOUD_TOKEN }} \
             -v $(pwd):/home \
             --rm arm64v8/ubuntu:20.04 \
