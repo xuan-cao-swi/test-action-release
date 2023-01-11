@@ -39,8 +39,31 @@ echo "Install solarwinds_apm version: $SOLARWINDS_APM_VERSION"
     elif  grep rhel /etc/os-release; then
         debain_version=$(grep VERSION_ID /etc/os-release | sed 's/VERSION_ID="//' | sed 's/"//')
         if [ "$debain_version" = "11" ] || [ "$debain_version" = "12" ]; then
-            yum update -y && yum install -y ruby ruby-devel gcc gcc-c++ make
-            # libyaml-devel libffi-devel openssl-devel make bzip2 autoconf automake libtool bison curl sqlite-devel -y
+            yum update -y && yum install -y ruby ruby-devel gcc gcc-c++ make libyaml-devel libffi-devel openssl-devel make bzip2 autoconf automake libtool
+            dnf install redhat-rpm-config
+            
+            git clone https://github.com/rbenv/rbenv.git ~/.rbenv \
+                 && git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build \
+                 && git clone https://github.com/rbenv/rbenv-default-gems.git ~/.rbenv/plugins/rbenv-default-gems \
+                 && echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.profile \
+                 && echo 'eval "$(rbenv init -)"' >> ~/.profile \
+                 && echo 'eval "$(rbenv init -)"' >> ~/.bashrc \
+                 && echo 'bundler' > ~/.rbenv/default-gems
+
+            echo 'alias be="bundle exec"' >> ~/.bashrc
+            echo 'alias be="bundle exec"' >> ~/.profile
+
+            # install rubies to build our gem against
+            . ~/.profile \
+                && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
+                && rbenv install 2.5.9 \
+                && rbenv install 2.6.9 \
+                && rbenv install 2.7.5 \
+                && rbenv install 3.0.3 \
+                && rbenv install 3.1.0
+
+            rbenv local 3.1.0
+            # this works for "docker run -it --rm --platform=linux/amd64 --name sample-redhat redhat/ubi8:latest"
         else
             echo "ERROR: Testing on Debian < 11 not supported."
             exit 1
