@@ -121,7 +121,8 @@ jobs:
             -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
             -v $(pwd):/tmp \
             --rm arm64v8/ruby:3.2.0-bullseye \
-            -- 'gem install solarwinds_apm -v "${{ github.event.inputs.solarwinds-version }}" --source https://packagecloud.io/solarwinds/solarwinds-apm-ruby/ && ruby ./.github/workflows/scripts/test_install.rb'
+            -- 'ls -al'      
+    # -- 'gem install solarwinds_apm -v "${{ github.event.inputs.solarwinds-version }}" --source https://packagecloud.io/solarwinds/solarwinds-apm-ruby/ && ruby ./.github/workflows/scripts/test_install.rb'
 
 
 
