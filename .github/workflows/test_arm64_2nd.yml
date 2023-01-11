@@ -61,7 +61,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: docker/setup-qemu-action@v2
       # - run: docker pull --platform linux/arm64 ghcr.io/${{ github.repository }}/dev:${{ matrix.image }}
-      - run: docker pull arm64v8/ubuntu-latest
+      - run: docker pull arm64v8/ubuntu:20.04
       - name: Run tests in container using QEMU
         run: |
           sudo docker run \
@@ -71,7 +71,7 @@ jobs:
             -e SOLARWINDS_APM_VERSION= ${{ github.event.inputs.solarwinds-version }} \
             -e PACKAGECLOUD_TOKEN=${{ secrets.PACKAGECLOUD_TOKEN }} \
             -v $(pwd):/home \
-            --rm arm64v8/ruby:3.2.0-bullseye \
+            --rm arm64v8/ubuntu:20.04 \
             ./home/sample.sh
 
     # -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
