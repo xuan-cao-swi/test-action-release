@@ -1,0 +1,75 @@
+name: Benchmarking
+
+on:
+  workflow_dispatch:
+
+jobs:
+  benchmark_solarwinds_apm:
+    name: run without solarwinds_apm
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+
+    services:
+      rails_app:
+        image: ghcr.io/${{ github.repository }}/apm_ruby_benchmark_without_apm
+        ports:
+          - 8002:8002
+        # resources:
+        #   cpus: 1
+        #   memory: 1GB
+
+      rails_app_with_apm:
+        image: ghcr.io/${{ github.repository }}/apm_ruby_benchmark_with_apm
+        ports:
+          - 8003:8002
+        env:
+          SW_APM_COLLECTOR: "java-collector:12224"
+          SW_APM_TRUSTEDPATH: "/var/app/learn-rails/server-grpc.crt"
+        volumes:
+          - ./java-collector/server-grpc.crt:/var/app/learn-rails/server-grpc.crt
+        # resources:
+        #   cpus: 1
+        #   memory: 1GB
+
+      java-collector:
+        image: "traceqa/test-collector:java-collector"
+        volumes:
+          - ./java-collector/settings.db:/settings.db
+          - ./java-collector/server-grpc.pem:/server-grpc.pem
+          - ./java-collector/server-grpc.crt:/server-grpc.crt
+          - ./java-collector/config-proxy-ao.json:/config.json
+        # logging:
+        #   options:
+        #     max-file: "1"
+        #     max-size: 50m
+        ports:
+          - 8181:8181
+          - 12224:12224
+        command: java -jar apm-agent-test-collector.jar
+
+
+    steps:
+    - name: Checkout ${{ github.ref }}
+      uses: actions/checkout@v3
+
+    - name: Benchmark without solarwinds_apm
+      run: |
+        apt-get update && apt-get upgrade -y && apt-get install apache2-utils
+        sleep 10
+        docker container ps
+        sleep 10
+        ab -n 20 -c 2 http://0.0.0.0:8002/ &
+        P1=$!
+        ab -n 20 -c 2 http://0.0.0.0:8003/ &
+        P2=$!
+        wait $P1 $P2
+
+
+
+# echo "Running without solarwinds_apm"
+# ab -n 20 -c 2 http://0.0.0.0:8002/
+# sleep 10
+# echo "Running WITH solarwinds_apm"
+# ab -n 20 -c 2 http://0.0.0.0:8003/

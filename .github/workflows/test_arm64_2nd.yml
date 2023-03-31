@@ -1,0 +1,169 @@
+name: Verify Installation Direct Approach
+
+on:
+  workflow_dispatch:
+    inputs:
+      install-registry:
+        required: true
+        description: 'Registry used for install tests, e.g. RubyGem, packagecloud'
+        type: choice
+        default: 'RubyGem'
+        options:
+        - RubyGem
+        - packagecloud
+
+      solarwinds-version:
+        required: true
+        description: 'Solarwinds apm version'
+
+env:
+  SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
+  SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY }}
+  SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR }}
+  PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+
+jobs:
+
+  # verify_install_amd64_test:
+  #   name: ruby - ${{ matrix.os }} amd64 - ${{ github.event.inputs.solarwinds-version }}
+  #   runs-on: ubuntu-latest
+
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [3.1.3-bullseye]
+
+  #   container:
+  #     image: ruby:${{ matrix.os }}
+
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Setup and run install test
+  #       working-directory: .github/workflows/
+  #       run: ./scripts/_helper_run_install_tests.sh
+  #       shell: sh
+  #       env:
+  #         MODE: ${{ github.event.inputs.install-registry }}
+  #         ARCHITECTURE: AMD
+
+
+  # verify_install_arm64_test:
+  #   name: ruby - ${{ matrix.ruby_version }} arm64 - ${{ github.event.inputs.solarwinds-version }}
+  #   runs-on: ubuntu-latest
+    
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       # os: [3.1.3-bullseye, 2.7.7-bullseye, 3.1.3-alpine3.17, 2.7.7-alpine3.16]
+  #       ruby_version: [3.1.0]
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: docker/setup-qemu-action@v2
+  #     # - run: docker pull --platform linux/arm64 ghcr.io/${{ github.repository }}/dev:${{ matrix.image }}
+  #     - run: docker pull arm64v8/ubuntu:20.04
+  #     - name: Run tests in container using QEMU
+  #       run: |
+  #         sudo docker run \
+  #           --platform linux/arm64 \
+  #           -e RUBY_VERSION=${{ matrix.ruby_version }} \
+  #           -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
+  #           -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
+  #           -e SOLARWINDS_APM_VERSION=${{ github.event.inputs.solarwinds-version }} \
+  #           -e PACKAGECLOUD_TOKEN=${{ secrets.PACKAGECLOUD_TOKEN }} \
+  #           -v $(pwd):/home \
+  #           --rm arm64v8/ubuntu:20.04 \
+  #           ./home/full_install.sh
+
+  # verify_install_arm64_test:
+  #   name: ruby - ${{ matrix.ruby_version }} arm64 - ${{ github.event.inputs.solarwinds-version }}
+  #   runs-on: ubuntu-latest
+    
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       # os: [3.1.3-bullseye, 2.7.7-bullseye, 3.1.3-alpine3.17, 2.7.7-alpine3.16]
+  #       ruby_version: [3.1.0, 2.7.5]
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: docker/setup-qemu-action@v2
+  #     # - run: docker pull --platform linux/arm64 ghcr.io/${{ github.repository }}/dev:${{ matrix.image }}
+  #     - run: docker pull redhat/ubi8
+  #     - name: Run tests in container using QEMU
+  #       run: |
+  #         sudo docker run \
+  #           --platform linux/arm64 \
+  #           -e RUBY_VERSION=${{ matrix.ruby_version }} \
+  #           -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
+  #           -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
+  #           -e SOLARWINDS_APM_VERSION=${{ github.event.inputs.solarwinds-version }} \
+  #           -e PACKAGECLOUD_TOKEN=${{ secrets.PACKAGECLOUD_TOKEN }} \
+  #           -v $(pwd):/home \
+  #           --rm redhat/ubi8 \
+  #           ./home/full_install_rhel.sh
+
+
+  verify_install_amd64_test:
+    name: ruby - ${{ matrix.ruby_version }} - amd64 - ${{ github.event.inputs.solarwinds-version }}
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        # os: [3.1.3-bullseye, 2.7.7-bullseye, 3.1.3-alpine3.17, 2.7.7-alpine3.16]
+        ruby_version: [3.1.0, 2.7.5]
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker pull redhat/ubi8
+      - name: Run tests in container
+        run: |
+          sudo docker run \
+            --platform linux/amd64 \
+            -e RUBY_VERSION=${{ matrix.ruby_version }} \
+            -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
+            -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
+            -e SOLARWINDS_APM_VERSION=${{ github.event.inputs.solarwinds-version }} \
+            -e PACKAGECLOUD_TOKEN=${{ secrets.PACKAGECLOUD_TOKEN }} \
+            -v $(pwd):/home \
+            --rm redhat/ubi8 \
+            ./home/full_install_rhel.sh
+
+    # -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
+    # -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
+    # -- 'gem install solarwinds_apm -v "${{ github.event.inputs.solarwinds-version }}" --source https://packagecloud.io/solarwinds/solarwinds-apm-ruby/ && ruby ./.github/workflows/scripts/test_install.rb'
+
+    # docker run --rm debian:latest echo test
+    # docker run --platform=linux/amd64 -v $(pwd):/home --rm debian:latest ./home/sample.sh
+
+  # verify_install_arm64_test:
+  #   name: ruby - ${{ matrix.ruby_version }} - arm64 - ${{ github.event.inputs.solarwinds-version }}
+  #   runs-on: ubuntu-latest
+    
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       # os: [3.1.3-bullseye, 2.7.7-bullseye, 3.1.3-alpine3.17, 2.7.7-alpine3.16]
+  #       ruby_version: [3.1.0, 2.7.5]
+
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: docker/setup-qemu-action@v2
+  #     - run: docker pull --platform linux/arm64 redhat/ubi8
+  #     - name: Run tests in container
+  #       run: |
+  #         sudo docker run \
+  #           --platform linux/arm64 \
+  #           -e RUBY_VERSION=${{ matrix.ruby_version }} \
+  #           -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
+  #           -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
+  #           -e SOLARWINDS_APM_VERSION=${{ github.event.inputs.solarwinds-version }} \
+  #           -e PACKAGECLOUD_TOKEN=${{ secrets.PACKAGECLOUD_TOKEN }} \
+  #           -v $(pwd):/home \
+  #           --rm redhat/ubi8 \
+  #           ./home/full_install_rhel.sh
+
+
+
+

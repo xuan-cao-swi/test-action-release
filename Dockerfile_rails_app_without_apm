@@ -1,0 +1,22 @@
+FROM --platform=linux/amd64 ruby:2.6.8
+
+RUN apt update && apt install -y git curl libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev nodejs vim nano apache2-utils
+
+WORKDIR /var/app/
+
+COPY . /var/app/
+
+WORKDIR /var/app/learn-rails
+
+RUN mv Gemfile_without_apm Gemfile
+RUN mv Gemfile_without_apm.lock Gemfile.lock
+
+RUN gem install bundler -v=1.17.2
+
+RUN bundle install
+
+EXPOSE 8002
+
+# rails server -b 0.0.0.0 -p 8002
+
+CMD ["rails", "server", "-b", "0.0.0.0", "-p", "8002"]

@@ -1,0 +1,122 @@
+name: Verify Installation Direct Approach With Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      install-registry:
+        required: true
+        description: 'Registry used for install tests, e.g. RubyGem, packagecloud'
+        type: choice
+        default: 'RubyGem'
+        options:
+        - RubyGem
+        - packagecloud
+
+      solarwinds-version:
+        required: true
+        description: 'Solarwinds apm version'
+
+env:
+  SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
+  SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY }}
+  SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR }}
+  PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+
+jobs:
+  verify_install_amd64_test:
+    name: ruby - ${{ matrix.ruby_version }} - amd64 - ${{ github.event.inputs.solarwinds-version }}
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        # os: [3.1.3-bullseye, 2.7.7-bullseye, 3.1.3-alpine3.17, 2.7.7-alpine3.16]
+        ruby_version: ['3.1.0']
+
+    services:
+      # memcached:
+      #   image: memcached:latest
+      #   ports:
+      #     - 11211:11211
+      #   options: --health-cmd "timeout 5 bash -c 'cat < /dev/null > /dev/udp/127.0.0.1/11211'" --health-interval 10s --health-timeout 5s --health-retries 5
+      # rabbitmq:
+      #   image: rabbitmq:latest
+      #   ports:
+      #     - 5672:5672
+      #   options: --health-cmd "rabbitmqctl node_health_check" --health-interval 10s --health-timeout 5s --health-retries 5
+      # mongo:
+      #   image: mongo:6
+      #   ports:
+      #     - 27017:27017
+      #   options: --health-cmd "mongosh --quiet --eval 'quit(db.runCommand({ping:1}).ok ? 0:2)'" --health-interval 10s --health-timeout 5s --health-retries 5
+      # postgres:
+      #   image: postgres:latest
+      #   env:
+      #     POSTGRES_PASSWORD: "postgres"
+      #     POSTGRES_DB: test_db
+      #   ports:
+      #     - 5432:5432
+      #   options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      mysql:
+        image: mariadb:latest
+        env:
+          MYSQL_USER: user
+          MYSQL_PASSWORD: password
+          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_PASSWORD: admin
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check existing docker container
+        id: memcached_services
+        run: |
+          docker container ps
+          docker network ls
+          echo ::set-output name=github_network::`docker network ls -qf 'name=github_network'`
+      # echo ::set-output name=memcached_id::`docker ps -aqf "name=memcached" `
+      # echo ::set-output name=container_name::`docker ps --format '{{.Names}}'`
+
+      - name: check memcached id
+        run: |
+          sudo apt-get update && sudo apt-get install telnet mysql-client -y
+
+
+
+      # mysql --host=0.0.0.0 --user=user --password=password -e "show databases;"
+
+
+      # echo "memcached id:    ${{ steps.memcached_services.outputs.memcached_id }}"
+      # telnet ${{ steps.memcached_services.outputs.container_name }} 11211
+      # telnet 0.0.0.0 11211
+      # telnet 0.0.0.0 
+      # ${{ steps.checksum.outputs.geminfo }}
+      # telnet ${{ steps.memcached_services.outputs.memcached_id }} 11211
+
+      - run: docker pull ubuntu:20.04
+
+      - name: Run tests in container
+        run: |
+          sudo docker run \
+            --platform linux/amd64 \
+            --network ${{ steps.memcached_services.outputs.github_network }} \
+            -e RUBY_VERSION=${{ matrix.ruby_version }} \
+            -e SW_APM_SERVICE_KEY=${{ secrets.SW_APM_SERVICE_KEY }} \
+            -e SW_APM_COLLECTOR=${{ secrets.SW_APM_COLLECTOR }} \
+            -e SOLARWINDS_APM_VERSION=${{ github.event.inputs.solarwinds-version }} \
+            -e PACKAGECLOUD_TOKEN=${{ secrets.PACKAGECLOUD_TOKEN }} \
+            -e MYSQL_SERVER=mysql \
+            -e MYSQL_USER=user \
+            -e MYSQL_PASSWORD=password \
+            -v $(pwd):/home \
+            --rm ubuntu:20.04 \
+            ./home/extra_test.sh
+
+# --network="host"
+# without cd home/
+# the directory is the /root
+# cd to other directory will lose the environmental variable

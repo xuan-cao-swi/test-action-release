@@ -1,0 +1,127 @@
+name: Verify ARM With EC2 WITHOUT EC2 BUILD IMAGE
+
+on:
+  workflow_dispatch:
+
+env:
+  SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
+  SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY }}
+  SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR }}
+  PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+
+
+jobs:
+  start-runner:
+    name: Start self-hosted EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        # uses: machulav/ec2-github-runner@v2
+        uses: xuan-cao-swi/ec2-github-runner@main
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-0620aa8714211d0af
+          # Canonical, Ubuntu, 22.04 LTS, arm64 jammy image build on 2023-01-15
+          ec2-instance-type: a1.medium
+          subnet-id: ${{ secrets.SUBNET }}
+          # can be found in network settings
+          security-group-id: ${{ secrets.SECURITY_GROUP }}
+          # the security-group needs have role that open 443 port to register runner in github runner 
+          aws-resource-tags: > # optional, requires additional permissions
+            [
+              {"Key": "Name", "Value": "ec2-github-runner-xuan-test"}
+            ]
+
+          # iam-role-name: my-role-name # optional, requires additional permissions
+          # aws-resource-tags: > # optional, requires additional permissions
+          #   [
+          #     {"Key": "Name", "Value": "ec2-github-runner"},
+          #     {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+          #   ]
+
+  set-up-docker:
+    name: Setup the docker env
+    needs: start-runner # required to start the main job when the runner is ready
+    runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runner
+
+    steps:
+      - name: Setup docker
+        run: |
+          apt-get update -y && apt-get install ca-certificates curl gnupg lsb-release
+          mkdir -p /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          apt-get update
+          apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+      - name: check docker
+        run: docker images
+          
+
+  do-the-job:
+    name: Do the job on the runner
+    needs: 
+      - start-runner # required to start the main job when the runner is ready
+      - set-up-docker
+    runs-on: ${{ needs.start-runner.outputs.label }} # run the job on the newly created runner
+
+    container:
+      image: arm64v8/ubuntu:20.04
+
+    steps:
+      - name: Hello World
+        run: echo 'Hello World!'
+
+      - uses: actions/checkout@v3
+
+      - name: check docker arch
+        run: |
+          uname -a
+
+
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+    needs:
+      - start-runner # required to get output from the start-runner job
+      - set-up-docker
+      - do-the-job # required to wait when the main job is done
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Stop EC2 runner
+        # uses: machulav/ec2-github-runner@v2
+        uses: xuan-cao-swi/ec2-github-runner@main
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
+
+
+
+
+
+
+
+
+
+
+
+

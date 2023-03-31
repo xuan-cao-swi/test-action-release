@@ -1,0 +1,74 @@
+version: "3.8"
+
+services:
+  rails_app_mem:
+    image: rails_app_mem:latest
+    build:
+      context: .
+      dockerfile: Dockerfile_rails_mem
+    container_name: rails_app_mem-1
+    ports:
+      - 8002:8002
+    environment:
+      - SW_APM_COLLECTOR=java-collector:12224
+      - SW_APM_TRUSTEDPATH=/var/app/learn-rails/server-grpc.crt
+    volumes:
+      - ./java-collector/server-grpc.crt:/var/app/learn-rails/server-grpc.crt
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  rails_app_without_apm_mem:
+    image: rails_app_without_apm_mem:latest
+    build:
+      context: .
+      dockerfile: Dockerfile_rails_mem_without_apm
+    container_name: rails_app_without_apm_mem-1
+    ports:
+      - 8003:8002
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  rails_app_apm_mem_otel:
+    image: rails_app_apm_mem_otel:latest
+    build:
+      context: .
+      dockerfile: Dockerfile_rails_mem_with_otel
+    container_name: rails_app_apm_mem_otel-1
+    ports:
+      - 8004:8002
+    environment:
+      - SW_APM_SERVICE_KEY=Ht9RsnbFkCtZB02WdqVxGLbaxQDr3wzjvE6Y1m8XgPAfuN7J4Iy5-4hZ5iDZGjTxPY5ChFrS5:test-service-name
+      - SW_APM_COLLECTOR=java-collector:12224
+      - SW_APM_TRUSTEDPATH=/var/app/learn-rails/server-grpc.crt
+    volumes:
+      - ./java-collector/server-grpc.crt:/var/app/learn-rails/server-grpc.crt
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  sample_app_holder:
+    image: ubuntu:latest
+    platform: linux/amd64
+    command: tail -f /dev/null
+
+  java-collector:
+    image: "traceqa/test-collector:java-collector"
+    container_name: java-collector
+    volumes:
+      - ./java-collector/settings.db:/settings.db
+      - ./java-collector/server-grpc.pem:/server-grpc.pem
+      - ./java-collector/server-grpc.crt:/server-grpc.crt
+      - ./java-collector/config-proxy-ao.json:/config.json
+    ports:
+      - 8181:8181
+      - 12224:12224
+    command: java -jar apm-agent-test-collector.jar
+

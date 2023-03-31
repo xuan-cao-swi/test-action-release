@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  rails_app:
+    image: ghcr.io/xuan-cao-swi/test-action-release/apm_ruby_benchmark_without_apm
+    container_name: rails_app_wo_apm
+    ports:
+      - 8002:8002
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1GB
+
+  rails_app_with_apm:
+    image: ghcr.io/xuan-cao-swi/test-action-release/apm_ruby_benchmark_with_apm
+    container_name: rails_app_with_apm
+    ports:
+      - 8003:8002
+    environment:
+      - SW_APM_COLLECTOR=java-collector:12224
+      - SW_APM_TRUSTEDPATH=/var/app/learn-rails/server-grpc.crt
+    volumes:
+      - ./java-collector/server-grpc.crt:/var/app/learn-rails/server-grpc.crt
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1GB
+
+  java-collector:
+    image: "traceqa/test-collector:java-collector"
+    container_name: java-collector
+    volumes:
+      - ./java-collector/settings.db:/settings.db
+      - ./java-collector/server-grpc.pem:/server-grpc.pem
+      - ./java-collector/server-grpc.crt:/server-grpc.crt
+      - ./java-collector/config-proxy-ao.json:/config.json
+    ports:
+      - 8181:8181
+      - 12224:12224
+    command: java -jar apm-agent-test-collector.jar

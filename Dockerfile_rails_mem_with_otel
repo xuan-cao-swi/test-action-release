@@ -1,0 +1,20 @@
+FROM --platform=linux/amd64 ruby:2.6.8
+
+RUN apt update && apt install -y git curl libssl-dev libreadline-dev zlib1g-dev autoconf bison build-essential libyaml-dev libreadline-dev libncurses5-dev libffi-dev libgdbm-dev nodejs vim nano apache2-utils
+
+WORKDIR /var/app/
+
+COPY . /var/app/
+
+WORKDIR /var/app/learn-rails
+
+RUN gem install bundler -v=1.17.2
+
+RUN mv Gemfile_otel_ruby Gemfile
+RUN mv Gemfile_otel_ruby.lock Gemfile.lock
+
+RUN bundle install
+
+EXPOSE 8002
+
+CMD ["rails", "server", "-b", "0.0.0.0", "-p", "8002"]

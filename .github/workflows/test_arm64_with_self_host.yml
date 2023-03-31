@@ -1,0 +1,30 @@
+name: Verify Installation With SELF HOSTED
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+
+  do-the-job:
+    name: Do the job on the runner
+    runs-on: abcdf
+
+    container:
+      image: arm64v8/ubuntu:20.04
+
+    steps:
+      - name: Hello World
+        run: echo 'Hello World!'
+
+      - uses: actions/checkout@v3
+
+      - name: check docker arch
+        run: |
+          uname -a
+
+
+
+
+
+
