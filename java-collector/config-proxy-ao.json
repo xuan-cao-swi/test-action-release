@@ -3,7 +3,6 @@
   "settingsLocation": "settings.db",
   "defaultCollectors": [
     {
-      // "name": "grpc-collector",
       "protocol": "grpc",
       "port": 12224,
       "messageOverhead": 0,
