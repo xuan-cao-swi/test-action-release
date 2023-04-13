@@ -7,6 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile_rails_mem
     container_name: rails_app_mem-1
+    restart: no
     ports:
       - 8002:8002
     environment:
@@ -18,7 +19,7 @@ services:
       resources:
         limits:
           cpus: '1'
-          memory: 1G
+          memory: 500m
 
   rails_app_without_apm_mem:
     image: rails_app_without_apm_mem:latest
@@ -26,13 +27,14 @@ services:
       context: .
       dockerfile: Dockerfile_rails_mem_without_apm
     container_name: rails_app_without_apm_mem-1
+    restart: no
     ports:
       - 8003:8002
     deploy:
       resources:
         limits:
           cpus: '1'
-          memory: 1G
+          memory: 500m
 
   rails_app_apm_mem_otel:
     image: rails_app_apm_mem_otel:latest
@@ -40,6 +42,7 @@ services:
       context: .
       dockerfile: Dockerfile_rails_mem_with_otel
     container_name: rails_app_apm_mem_otel-1
+    restart: no
     ports:
       - 8004:8002
     environment:
@@ -52,12 +55,17 @@ services:
       resources:
         limits:
           cpus: '1'
-          memory: 1G
+          memory: 500m
 
   sample_app_holder:
     image: ubuntu:latest
     platform: linux/amd64
     command: tail -f /dev/null
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   java-collector:
     image: "traceqa/test-collector:java-collector"

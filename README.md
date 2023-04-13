@@ -62,3 +62,9 @@ docker-compose-memory-benchmark.yml
 Dockerfile_rails_mem
 Dockerfile_rails_mem_without_apm
 ```
+
+### Monitor the stats and output graph
+
+start the docker container
+run ab_test_infinite.sh
+run monitor_docker_stats.py
