@@ -69,6 +69,10 @@ Rails.application.configure do
 
   config.lograge.enabled = true if defined?(Lograge)
 
+  config.lograge.custom_options = lambda do |event|
+   SolarWindsOTelAPM.current_trace_info.hash_for_log
+  end
+
   # Use an evented file watcher to asynchronously detect changes in source code,
   # routes, locales, etc. This feature depends on the listen gem.
   # config.file_watcher = ActiveSupport::EventedFileUpdateChecker

@@ -1,3 +1,4 @@
 .github/workflows/.DS_Store
 *.csv
 *.png
+.DS_Store

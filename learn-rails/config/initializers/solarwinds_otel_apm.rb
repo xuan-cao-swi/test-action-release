@@ -62,6 +62,7 @@ if defined?(SolarWindsOTelAPM::Config)
   # Values out of range (< -1 or > 6) are ignored and the log level is set to the default (info).
   #
   SolarWindsOTelAPM::Config[:debug_level] = 3
+  # SolarWindsOTelAPM::Config[:debug_level] = 6
 
   #
   # :debug_level will be used in the c-extension of the gem and also mapped to the
@@ -118,6 +119,7 @@ if defined?(SolarWindsOTelAPM::Config)
   #           when there is no tracing context.
   #
   SolarWindsOTelAPM::Config[:log_traceId] = :never
+  # SolarWindsOTelAPM::Config[:log_traceId] = :always
 
   #
   # Trace Context in Queries (sql only)

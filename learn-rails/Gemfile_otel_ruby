@@ -17,6 +17,7 @@ gem 'jbuilder', '~> 2.5'
 source "https://packagecloud.io/solarwinds/solarwinds-apm-otel-ruby" do
   gem "solarwinds_otel_apm"
 end
+gem 'lograge'
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]

@@ -14,7 +14,10 @@ RUN mv Gemfile_otel_ruby Gemfile
 RUN mv Gemfile_otel_ruby.lock Gemfile.lock
 
 RUN bundle install
+RUN bundle update solarwinds_otel_apm
 
 EXPOSE 8002
 
 CMD ["rails", "server", "-b", "0.0.0.0", "-p", "8002"]
+
+# rails server -b 0.0.0.0 -p 8002

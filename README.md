@@ -5,8 +5,6 @@
 ### Docker compose with docker stats
 
 
-
-
 Build through docker compose
 ```
 docker compose -f docker-compose-memory-benchmark.yml build
@@ -21,16 +19,32 @@ docker stats
 Build single images
 ```
 docker build . -f Dockerfile_rails_mem -t rails_app_mem:latest
+docker build . -f Dockerfile_rails_mem_with_otel -t rails_mem_with_otel:latest
 ```
 
-simulate the request
+Start containers
+```
+docker run  -it --rm --name sample-alpine rails_mem_with_otel:latest
+```
+
+### Simulate the request
+
+#### without ab
+
+curl http://rails_app_mem-1:8002/
+
+curl http://rails_app_without_apm_mem-1:8003/ 
+
+curl http://0.0.0.0:8002/
+
+#### with ab
 
 ```
 ab -n 100000 -c 100 http://rails_app_mem-1:8002/ &
 ab -n 100000 -c 100 http://rails_app_without_apm_mem-1:8003/ &
 ```
 
-simulate the request at same time
+#### simulate the request at same time
 ```
 ab -n 100000 -c 100 http://rails_app_mem-1:8002/ &
 P1=$!
@@ -47,10 +61,7 @@ P2=$!
 wait $P1 $P2
 ```
 
-curl http://rails_app_mem-1:8002/
-
-curl http://rails_app_without_apm_mem-1:8003/ 
-
+### Install AB
 
 Install components for simulating
 apt-get update && apt-get upgrade -y
