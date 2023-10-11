@@ -10,3 +10,5 @@ do
 
     sleep 30m
 done
+
+echo "yes"
