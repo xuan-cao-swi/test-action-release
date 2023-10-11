@@ -7,3 +7,4 @@ P3=$!
 wait $P1 $P2 $P3
 echo "yes"
 echo "ok"
+echo "y"
