@@ -26,7 +26,7 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
-        run: 1/0
+        run: echo Hello, world!
 
       - name: Create release draft that includes the checksum
         run: |
