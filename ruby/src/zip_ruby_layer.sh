@@ -32,9 +32,8 @@ main() {
 		esac
 	done
 
-	cd .aws-sam/build/OTelLayer/
-	zip -qr ../../../"$layerName".zip ruby/
-	cd -
+	(cd .aws-sam/build/OTelLayer/ && zip -qr ../"$layerName".zip .)
+	mv .aws-sam/build/"$layerName".zip .
 	echo "Finished"
 }
 
