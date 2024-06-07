@@ -2,3 +2,6 @@
 *.csv
 *.png
 .DS_Store
+
+ruby/src2/.aws-sam/*
+ruby/src2/build/*

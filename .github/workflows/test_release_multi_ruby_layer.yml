@@ -1,0 +1,35 @@
+name: "Release Ruby Lambda Layer Mutliple Version"
+
+on:
+  # (Using tag push instead of release to allow filtering by tag prefix.)
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-layer:
+    runs-on: ubuntu-latest
+    outputs:
+      RUBY_SDK_VERSION: ${{ steps.save-ruby-sdk-version.outputs.RUBY_SDK_VERSION}}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        id: save-ruby-sdk-version
+        run: |
+          ./build.sh
+        shell: bash
+        working-directory: ruby/src2
+
+      - name: Show directory contents
+        run: |
+          ls -al
+        working-directory: ruby/src2/build
+
+      - uses: actions/upload-artifact@v4
+        name: Save assembled layer to build
+        with:
+          name: opentelemetry-ruby-layer.zip
+          path: ruby/src2/build/opentelemetry-ruby-layer.zip
