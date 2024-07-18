@@ -34,6 +34,7 @@ RUN zip -r gems-3.2.0.zip 3.2.0/
 WORKDIR /root/.rbenv/versions/3.3.0/lib/ruby/gems/
 RUN zip -r gems-3.3.0.zip 3.3.0/
 
+# RUN ls -al /root/.rbenv/versions/3.2.0/lib/ruby/gems
 RUN ls -al /root/.rbenv/versions/3.2.0/lib/ruby/gems && ls -al /root/.rbenv/versions/3.3.0/lib/ruby/gems
 
 # copy gems to /build/ruby/gems for zipping 
