@@ -25,8 +25,8 @@ jobs:
 
       - name: Save Ruby SDK Version
         run: |
-          ls -al
           unzip -q build/opentelemetry-ruby-layer.zip
+          ls -al
           export GEM_PATH=$PWD/ruby/src2/opentelemetry-ruby-layer/ruby/gems/3.2.0/
           RUBY_SDK_VERSION=$(ruby -e 'require "opentelemetry-sdk"; puts OpenTelemetry::SDK::VERSION')
           echo "RUBY_SDK_VERSION=$RUBY_SDK_VERSION" >> $GITHUB_OUTPUT
