@@ -30,7 +30,9 @@ jobs:
           echo "========================"
           ls -al build/
           echo "========================"
-          export GEM_PATH=$PWD/opentelemetry-ruby-layer/ruby/gems/3.2.0/
+          ls -al ruby/
+          echo "========================"
+          export GEM_PATH=$PWD/ruby/gems/3.2.0/
           RUBY_SDK_VERSION=$(ruby -e 'require "opentelemetry-sdk"; puts OpenTelemetry::SDK::VERSION')
           echo "RUBY_SDK_VERSION=$RUBY_SDK_VERSION" >> $GITHUB_OUTPUT
         working-directory: ruby/src2
