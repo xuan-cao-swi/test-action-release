@@ -17,7 +17,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build
-        id: save-ruby-sdk-version
         run: |
           ./build.sh
         shell: bash
