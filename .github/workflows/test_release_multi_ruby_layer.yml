@@ -24,6 +24,7 @@ jobs:
         working-directory: ruby/src2
 
       - name: Save Ruby SDK Version
+        id: save-ruby-sdk-version
         run: |
           unzip -q build/opentelemetry-ruby-layer.zip
           ls -al
@@ -34,6 +35,7 @@ jobs:
           echo "========================"
           export GEM_PATH=$PWD/ruby/gems/3.2.0/
           RUBY_SDK_VERSION=$(ruby -e 'require "opentelemetry-sdk"; puts OpenTelemetry::SDK::VERSION')
+          echo $RUBY_SDK_VERSION
           echo "RUBY_SDK_VERSION=$RUBY_SDK_VERSION" >> $GITHUB_OUTPUT
         working-directory: ruby/src2
 
