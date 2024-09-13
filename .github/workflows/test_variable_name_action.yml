@@ -1,0 +1,27 @@
+name: "Test variable name action"
+
+on:
+  # (Using tag push instead of release to allow filtering by tag prefix.)
+  workflow_dispatch:
+    inputs:
+      publish-dest:
+        required: true
+        description: 'Publish destination, one of: staging, production'
+        type: choice
+        default: 'staging'
+        options:
+          - staging
+          - production
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-variable-name-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: configure AWS ${{ inputs.publish-dest }} credential
+        run: |
+          echo "${{ inputs.publish-dest }}"
