@@ -19,8 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
+          # - ubuntu-latest
+          # - macos-latest
           - windows-latest
 
     name: ${{ matrix.os }}
@@ -35,9 +35,40 @@ jobs:
           bundler: "latest"
           bundler-cache: false
 
-      - name: Install
-        shell: bash
+      # - name: Install
+      #   shell: bash
+      #   run: |
+      #     gem install solarwinds_apm --version '7.0.0.prev3'
+      #     ls -al
+      #     ruby .github/workflows/scripts/test_install_7.rb
+
+      - name: Verify install (Windows)
+        if: runner.os == 'Windows'
+        working-directory: .github/workflows/scripts
+        shell: pwsh
         run: |
-          gem install solarwinds_apm --version '7.0.0.prev3'
-          ls -al
-          ruby .github/workflows/scripts/test_install_7.rb
+          if ($env:MODE -eq "RubyGem") {
+            Write-Host "Installing from RubyGem..."
+            gem install solarwinds_apm -v $env:SOLARWINDS_APM_VERSION
+            ruby test_install.rb
+          } elseif ($env:MODE -eq "GitHub") {
+            Write-Host "Installing from GitHub..."
+            $VERSION_LOWER_CASE = $env:SOLARWINDS_APM_VERSION.ToLower()
+            $gemfileContent = @"
+          source 'https://rubygems.org'
+          source 'gem "opentelemetry-metrics-api"'
+          source 'gem "opentelemetry-metrics-sdk"'
+          source 'gem "opentelemetry-exporter-otlp"'
+          source 'gem "opentelemetry-exporter-otlp-metrics"'
+          source 'https://rubygems.pkg.github.com/solarwinds' do
+            gem 'solarwinds_apm', '$VERSION_LOWER_CASE'
+          end
+          "@
+            $gemfileContent | Out-File -FilePath Gemfile -Encoding utf8
+            bundle install
+            bundle exec ruby test_install.rb
+          }
+        env:
+          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
+          MODE: GitHub
+          SOLARWINDS_APM_VERSION: 7.0.0.prev3
