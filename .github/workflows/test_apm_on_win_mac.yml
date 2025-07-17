@@ -56,4 +56,5 @@ jobs:
         shell: bash
         run: |
           gem install solarwinds_apm --version '7.0.0.prev3'
+          ls -al
           ruby scripts/test_install_7.rb
