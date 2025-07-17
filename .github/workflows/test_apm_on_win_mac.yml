@@ -8,6 +8,11 @@ permissions:
   id-token: write
   contents: read
 
+
+env:
+  SW_APM_SERVICE_KEY: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
+  SW_APM_COLLECTOR: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_ENDPOINT }}
+
 jobs:
   test-apm-on-win-and-mac:
     strategy:
@@ -51,6 +56,4 @@ jobs:
         shell: bash
         run: |
           gem install solarwinds_apm --version '7.0.0.prev3'
-          ruby -e 'require "solarwinds_apm"'
-
-
+          ruby scripts/test_install_7.rb
