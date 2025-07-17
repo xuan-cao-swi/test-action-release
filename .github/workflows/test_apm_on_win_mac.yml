@@ -12,6 +12,7 @@ jobs:
   test-apm-on-win-and-mac:
     strategy:
       fail-fast: false
+      matrix:
         # hostname:
         #   - rb3.1.0-slim-bullseye
         # include:
