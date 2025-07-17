@@ -1,0 +1,55 @@
+name: "Test APM on WIN and MAC"
+
+on:
+  # (Using tag push instead of release to allow filtering by tag prefix.)
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-apm-on-win-and-mac:
+    strategy:
+      fail-fast: false
+        # hostname:
+        #   - rb3.1.0-slim-bullseye
+        # include:
+        #   - hostname: rb3.1.0-slim-bullseye
+        #     image: ruby:3.1.0-slim-bullseye
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    # name: ${{ matrix.hostname }} / ${{ matrix.os }}
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup
+        id: setup
+        shell: bash
+        run: |
+          # 🛠️ Setup 🛠️
+          dir=$(find . -iname '${{ inputs.gem }}.gemspec' -exec dirname {} \;)
+          echo "gem_dir=${dir}" >> $GITHUB_OUTPUT
+          echo "cache_key=mri" >> $GITHUB_OUTPUT
+
+      - uses: ruby/setup-ruby@v1.215.0
+        with:
+          ruby-version: '3.3'
+          working-directory: "${{ steps.setup.outputs.gem_dir }}"
+          bundler: "latest"
+          bundler-cache: true
+          cache-version: "v1-${{ steps.setup.outputs.cache_key }}"
+
+      - name: Install
+        shell: bash
+        run: |
+          gem install solarwinds_apm --version '7.0.0.prev3'
+          ruby -e 'require "solarwinds_apm"'
+
+
