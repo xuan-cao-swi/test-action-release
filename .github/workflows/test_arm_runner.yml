@@ -11,8 +11,7 @@ permissions:
 
 jobs:
   test-arm-runner:
-    runs-on: ubuntu-latest
-    architecture: arm64
+    runs-on: ubuntu-latest-arm64
 
     steps:
       - uses: actions/checkout@v4
