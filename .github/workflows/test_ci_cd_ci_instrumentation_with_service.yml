@@ -1,4 +1,4 @@
-name: CI Instrumentation With Services
+name: Test CI CD CI Instrumentation With Services
 
 on:
   workflow_dispatch:
