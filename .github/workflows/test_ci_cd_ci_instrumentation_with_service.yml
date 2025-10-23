@@ -1,0 +1,299 @@
+name: CI Instrumentation With Services
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'instrumentation/**'
+      - '.github/workflows/test_ci_cd_ci_instrumentation_with_service.yml'
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      other_matrix: ${{ steps.set-matrix.outputs.other_matrix }}
+      mysql_matrix: ${{ steps.set-matrix.outputs.mysql_matrix }}
+      kafka_matrix: ${{ steps.set-matrix.outputs.kafka_matrix }}
+      redis_matrix: ${{ steps.set-matrix.outputs.redis_matrix }}
+      postgresql_matrix: ${{ steps.set-matrix.outputs.postgresql_matrix }}
+      rabbitmq_matrix: ${{ steps.set-matrix.outputs.rabbitmq_matrix }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      
+      - name: Get changed instrumentation files
+        id: changed-files
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "run_all=true" >> $GITHUB_OUTPUT
+          else
+            # Get changed files
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+            else
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+            fi
+            
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            
+            # Extract unique instrumentation gem names from changed files
+            CHANGED_GEMS=$(echo "$CHANGED_FILES" | grep '^instrumentation/opentelemetry-instrumentation-' | cut -d'/' -f2 | sed 's/opentelemetry-instrumentation-//' | sort -u)
+            
+            if [ -z "$CHANGED_GEMS" ]; then
+              echo "run_all=false" >> $GITHUB_OUTPUT
+              echo "changed_gems=" >> $GITHUB_OUTPUT
+            else
+              echo "run_all=false" >> $GITHUB_OUTPUT
+              echo "changed_gems<<EOF" >> $GITHUB_OUTPUT
+              echo "$CHANGED_GEMS" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          # Define gem categories
+          OTHER_GEMS='["dalli","mongo"]'
+          MYSQL_GEMS='["mysql2","trilogy"]'
+          KAFKA_GEMS='["racecar","rdkafka","ruby_kafka"]'
+          REDIS_GEMS='["redis","resque","sidekiq"]'
+          POSTGRESQL_GEMS='["pg","que"]'
+          RABBITMQ_GEMS='["bunny"]'
+          
+          if [[ "${{ steps.changed-files.outputs.run_all }}" == "true" ]]; then
+            echo "Running all tests (schedule/manual trigger)"
+            echo "other_matrix={\"gem\":$OTHER_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "mysql_matrix={\"gem\":$MYSQL_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "kafka_matrix={\"gem\":$KAFKA_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "redis_matrix={\"gem\":$REDIS_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "postgresql_matrix={\"gem\":$POSTGRESQL_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "rabbitmq_matrix={\"gem\":$RABBITMQ_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+          elif [[ -z "${{ steps.changed-files.outputs.changed_gems }}" ]]; then
+            echo "No instrumentation changes detected, skipping tests"
+            echo "other_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "mysql_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "kafka_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "redis_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "postgresql_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            echo "rabbitmq_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+          else
+            CHANGED_GEMS="${{ steps.changed-files.outputs.changed_gems }}"
+            
+            # Filter gems by category
+            OTHER_CHANGED=$(echo "$CHANGED_GEMS" | grep -E '^(dalli|mongo)$' || true)
+            MYSQL_CHANGED=$(echo "$CHANGED_GEMS" | grep -E '^(mysql2|trilogy)$' || true)
+            KAFKA_CHANGED=$(echo "$CHANGED_GEMS" | grep -E '^(racecar|rdkafka|ruby_kafka)$' || true)
+            REDIS_CHANGED=$(echo "$CHANGED_GEMS" | grep -E '^(redis|resque|sidekiq)$' || true)
+            POSTGRESQL_CHANGED=$(echo "$CHANGED_GEMS" | grep -E '^(pg|que)$' || true)
+            RABBITMQ_CHANGED=$(echo "$CHANGED_GEMS" | grep -E '^(bunny)$' || true)
+            
+            # Convert to JSON arrays
+            if [ -z "$OTHER_CHANGED" ]; then
+              echo "other_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            else
+              OTHER_ARRAY=$(echo "$OTHER_CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Running tests for other gems: $OTHER_ARRAY"
+              echo "other_matrix={\"gem\":$OTHER_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [ -z "$MYSQL_CHANGED" ]; then
+              echo "mysql_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            else
+              MYSQL_ARRAY=$(echo "$MYSQL_CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Running tests for mysql gems: $MYSQL_ARRAY"
+              echo "mysql_matrix={\"gem\":$MYSQL_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [ -z "$KAFKA_CHANGED" ]; then
+              echo "kafka_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            else
+              KAFKA_ARRAY=$(echo "$KAFKA_CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Running tests for kafka gems: $KAFKA_ARRAY"
+              echo "kafka_matrix={\"gem\":$KAFKA_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [ -z "$REDIS_CHANGED" ]; then
+              echo "redis_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            else
+              REDIS_ARRAY=$(echo "$REDIS_CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Running tests for redis gems: $REDIS_ARRAY"
+              echo "redis_matrix={\"gem\":$REDIS_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [ -z "$POSTGRESQL_CHANGED" ]; then
+              echo "postgresql_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            else
+              POSTGRESQL_ARRAY=$(echo "$POSTGRESQL_CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Running tests for postgresql gems: $POSTGRESQL_ARRAY"
+              echo "postgresql_matrix={\"gem\":$POSTGRESQL_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            fi
+            
+            if [ -z "$RABBITMQ_CHANGED" ]; then
+              echo "rabbitmq_matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            else
+              RABBITMQ_ARRAY=$(echo "$RABBITMQ_CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Running tests for rabbitmq gems: $RABBITMQ_ARRAY"
+              echo "rabbitmq_matrix={\"gem\":$RABBITMQ_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  instrumentation_with_services:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.other_matrix != '' && fromJson(needs.detect-changes.outputs.other_matrix).gem[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.other_matrix) }}
+    name: other / ${{ matrix.gem }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Test ${{ matrix.gem }} on Ruby 3.4"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on Ruby 3.4"
+    services:
+      memcached:
+        image: memcached:alpine
+        ports:
+          - 11211:11211
+      mongodb:
+        image: mongo:4.4
+        ports:
+          - 27017:27017
+
+  instrumentation_mysql:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.mysql_matrix != '' && fromJson(needs.detect-changes.outputs.mysql_matrix).gem[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.mysql_matrix) }}
+    name: mysql / ${{ matrix.gem }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Test ${{ matrix.gem }} on Ruby 3.4"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on Ruby 3.4"
+    services:
+      mysql:
+        image: mysql:8.0.31
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3 -e MYSQL_DATABASE=mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_PASSWORD=mysql -e MYSQL_USER=mysql -p 3306:3306 --entrypoint sh mysql:8.0.31 -c "exec docker-entrypoint.sh mysqld --default-authentication-plugin=mysql_native_password"
+
+  instrumentation_kafka:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.kafka_matrix != '' && fromJson(needs.detect-changes.outputs.kafka_matrix).gem[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.kafka_matrix) }}
+    name: kafka / ${{ matrix.gem }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Test ${{ matrix.gem }} on Ruby 3.4"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on Ruby 3.4"
+    services:
+      zookeeper:
+        image: confluentinc/cp-zookeeper:latest
+        ports:
+          - 2181:2181
+        env:
+          ZOOKEEPER_CLIENT_PORT: 2181
+          ZOOKEEPER_TICK_TIME: 2000
+      kafka:
+        image: confluentinc/cp-kafka:7.9.1
+        ports:
+          - 9092:9092
+          - 29092:29092
+        env:
+          KAFKA_BROKER_ID: 1
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:29092,PLAINTEXT_HOST://localhost:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  instrumentation_redis:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.redis_matrix != '' && fromJson(needs.detect-changes.outputs.redis_matrix).gem[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.redis_matrix) }}
+    name: redis / ${{ matrix.gem }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Test ${{ matrix.gem }} on Ruby 3.4"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on Ruby 3.4"
+    services:
+      redis:
+        image: bitnamilegacy/redis:6.2
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          REDIS_PASSWORD: "passw0rd"
+
+  instrumentation_postgresql:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.postgresql_matrix != '' && fromJson(needs.detect-changes.outputs.postgresql_matrix).gem[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.postgresql_matrix) }}
+    name: postgresql / ${{ matrix.gem }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Test ${{ matrix.gem }} on Ruby 3.4"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on Ruby 3.4"
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=5s --health-timeout=2s --health-retries=3
+        volumes:
+          - "/var/run/postgresql:/var/run/postgresql"
+
+  instrumentation_rabbitmq:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.rabbitmq_matrix != '' && fromJson(needs.detect-changes.outputs.rabbitmq_matrix).gem[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.rabbitmq_matrix) }}
+    name: rabbitmq / ${{ matrix.gem }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Test ${{ matrix.gem }} on Ruby 3.4"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on Ruby 3.4"
+    services:
+      rabbitmq:
+        image: rabbitmq:3.8-alpine
+        ports:
+          - "5672:5672"

@@ -1,0 +1,142 @@
+name: Test CI CD CI Contrib
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'opentelemetry-helpers/**'
+      - 'opentelemetry-propagators/**'
+      - 'opentelemetry-resource-detectors/**'
+      - 'opentelemetry-processors/**'
+      - 'opentelemetry-samplers/**'
+      - '.github/workflows/test_ci_cd_ci_contrib.yml'
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      helpers: ${{ steps.filter.outputs.helpers }}
+      propagators: ${{ steps.filter.outputs.propagators }}
+      resource-detectors: ${{ steps.filter.outputs.resource-detectors }}
+      processors: ${{ steps.filter.outputs.processors }}
+      samplers: ${{ steps.filter.outputs.samplers }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            helpers:
+              - 'opentelemetry-helpers/**'
+            propagators:
+              - 'opentelemetry-propagators/**'
+            resource-detectors:
+              - 'opentelemetry-resource-detectors/**'
+            processors:
+              - 'opentelemetry-processors/**'
+            samplers:
+              - 'opentelemetry-samplers/**'
+
+  helpers:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.helpers == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        gem:
+          - sql
+        os:
+          - ubuntu-latest
+    name: "helpers-${{ matrix.gem }} / ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Run Test ${{ matrix.gem }}"
+        run: |
+          echo "Testing opentelemetry-helper-${{ matrix.gem }}"
+
+  propagators:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.propagators == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        gem:
+          - ottrace
+        os:
+          - ubuntu-latest
+    name: "propagator-${{ matrix.gem }} / ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Run Test ${{ matrix.gem }}"
+        run: |
+          echo "Testing opentelemetry-propagator-${{ matrix.gem }}"
+
+  resource-detectors:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.resource-detectors == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        gem:
+          - resource-detector-aws
+        os:
+          - ubuntu-latest
+    name: "opentelemetry-${{ matrix.gem }} / ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Run Test ${{ matrix.gem }}"
+        run: |
+          echo "Testing opentelemetry-${{ matrix.gem }}"
+
+  processors:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.processors == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        gem:
+          - baggage
+        os:
+          - ubuntu-latest
+    name: "processors-${{ matrix.gem }} / ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Run Test ${{ matrix.gem }}"
+        run: |
+          echo "Testing opentelemetry-processor-${{ matrix.gem }}"
+
+  samplers:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.samplers == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        gem:
+          - xray
+        os:
+          - ubuntu-latest
+    name: "samplers-${{ matrix.gem }} / ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Run Test ${{ matrix.gem }}"
+        run: |
+          echo "Testing opentelemetry-sampler-${{ matrix.gem }}"

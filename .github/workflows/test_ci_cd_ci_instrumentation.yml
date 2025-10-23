@@ -1,0 +1,123 @@
+name: Test CI CD CI Instrumentation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'instrumentation/**'
+      - '.github/workflows/test_ci_cd_ci_instrumentation.yml'
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      
+      - name: Get changed instrumentation files
+        id: changed-files
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "run_all=true" >> $GITHUB_OUTPUT
+          else
+            # Get changed files
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+            else
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+            fi
+            
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            
+            # Extract unique instrumentation gem names from changed files
+            CHANGED_GEMS=$(echo "$CHANGED_FILES" | grep '^instrumentation/opentelemetry-instrumentation-' | cut -d'/' -f2 | sed 's/opentelemetry-instrumentation-//' | sort -u)
+            
+            if [ -z "$CHANGED_GEMS" ]; then
+              echo "run_all=false" >> $GITHUB_OUTPUT
+              echo "changed_gems=" >> $GITHUB_OUTPUT
+            else
+              echo "run_all=false" >> $GITHUB_OUTPUT
+              echo "changed_gems<<EOF" >> $GITHUB_OUTPUT
+              echo "$CHANGED_GEMS" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          ALL_GEMS='["action_mailer","action_pack","action_view","active_job","active_model_serializers","active_record","active_storage","active_support","all","aws_sdk","aws_lambda","base","concurrent_ruby","delayed_job","ethon","excon","faraday","grape","graphql","grpc","gruf","http","http_client","httpx","koala","lmdb","logger","net_http","rack","rails","restclient","rspec","sinatra"]'
+          
+          if [[ "${{ steps.changed-files.outputs.run_all }}" == "true" ]]; then
+            echo "Running all tests (schedule/manual trigger)"
+            echo "matrix={\"gem\":$ALL_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+          elif [[ -z "${{ steps.changed-files.outputs.changed_gems }}" ]]; then
+            echo "No instrumentation changes detected, skipping tests"
+            echo "matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+          else
+            # Convert changed gems to JSON array
+            CHANGED_ARRAY=$(echo "${{ steps.changed-files.outputs.changed_gems }}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "Running tests for changed gems: $CHANGED_ARRAY"
+            echo "matrix={\"gem\":$CHANGED_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+          fi
+
+  instrumentation:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.matrix != '' && fromJson(needs.detect-changes.outputs.matrix).gem[0] != null }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+
+    name: ${{ matrix.gem }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Test Ruby 3.4"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on Ruby 3.4"
+      - name: "JRuby Filter"
+        id: jruby_skip
+        shell: bash
+        run: |
+          echo "skip=false" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "action_pack"              ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "action_view"              ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "active_model_serializers" ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "active_record"            ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "active_storage"           ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "active_support"           ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "aws_sdk"                  ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "aws_lambda"               ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "delayed_job"              ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "graphql"                  ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "http"                     ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "http_client"              ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "koala"                    ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "lmdb"                     ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "rack"                     ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "rails"                    ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "grpc"                     ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          [[ "${{ matrix.gem }}" == "gruf"                     ]] && echo "skip=true" >> $GITHUB_OUTPUT
+          true
+      - name: "Test JRuby"
+        if: "${{ matrix.os == 'ubuntu-latest' && steps.jruby_skip.outputs.skip == 'false' }}"
+        run: |
+          echo "Testing opentelemetry-instrumentation-${{ matrix.gem }} on JRuby"
