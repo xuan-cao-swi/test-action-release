@@ -41,11 +41,11 @@ jobs:
             if [[ "${{ github.event_name }}" == "pull_request" ]]; then
               CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
             else
+              # this is for push events
               CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
             fi
             
-            echo "Changed files:"
-            echo "$CHANGED_FILES"
+            echo "Changed files: $CHANGED_FILES"
             
             # Extract unique instrumentation gem names from changed files
             CHANGED_GEMS=$(echo "$CHANGED_FILES" | grep '^instrumentation/opentelemetry-instrumentation-' | cut -d'/' -f2 | sed 's/opentelemetry-instrumentation-//' | sort -u)
@@ -73,10 +73,14 @@ jobs:
             echo "No instrumentation changes detected, skipping tests"
             echo "matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
           else
-            # Convert changed gems to JSON array
-            CHANGED_ARRAY=$(echo "${{ steps.changed-files.outputs.changed_gems }}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-            echo "Running tests for changed gems: $CHANGED_ARRAY"
-            echo "matrix={\"gem\":$CHANGED_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            if echo "${{ steps.changed-files.outputs.changed_gems }}" | grep -q "^base$"; then
+              echo "Base gem changed, running all tests"
+              echo "matrix={\"gem\":$ALL_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            else
+              CHANGED_ARRAY=$(echo "${{ steps.changed-files.outputs.changed_gems }}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              echo "Running tests for changed gems: $CHANGED_ARRAY"
+              echo "matrix={\"gem\":$CHANGED_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+            fi
           fi
 
   instrumentation:
