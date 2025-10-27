@@ -64,7 +64,39 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          ALL_GEMS='["action_mailer","action_pack","action_view","active_job","active_model_serializers","active_record","active_storage","active_support","all","aws_sdk","aws_lambda","base","concurrent_ruby","delayed_job","ethon","excon","faraday","grape","graphql","grpc","gruf","http","http_client","httpx","koala","lmdb","logger","net_http","rack","rails","restclient","rspec","sinatra"]'
+          ALL_GEMS='["action_mailer", \
+                     "action_pack", \
+                     "action_view", \
+                     "active_job", \
+                     "active_model_serializers", \
+                     "active_record", \
+                     "active_storage", \
+                     "active_support", \
+                     "all", \
+                     "aws_sdk", \
+                     "aws_lambda", \
+                     "base", \
+                     "concurrent_ruby", \
+                     "delayed_job", \
+                     "ethon", \
+                     "excon", \
+                     "faraday", \
+                     "grape", \
+                     "graphql", \
+                     "grpc", \
+                     "gruf", \
+                     "http", \
+                     "http_client", \
+                     "httpx", \
+                     "koala", \
+                     "lmdb", \
+                     "logger", \
+                     "net_http", \
+                     "rack", \
+                     "rails", \
+                     "restclient", \
+                     "rspec", \
+                     "sinatra"]'
           
           if [[ "${{ steps.changed-files.outputs.run_all }}" == "true" ]]; then
             echo "Running all tests (schedule/manual trigger)"
