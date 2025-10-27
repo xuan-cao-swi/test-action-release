@@ -72,15 +72,13 @@ jobs:
           elif [[ -z "${{ steps.changed-files.outputs.changed_gems }}" ]]; then
             echo "No instrumentation changes detected, skipping tests"
             echo "matrix={\"gem\":[],\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
+          elif echo "${{ steps.changed-files.outputs.changed_gems }}" | grep -q "^base$"; then
+            echo "Base gem changed, running all tests"
+            echo "matrix={\"gem\":$ALL_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
           else
-            if echo "${{ steps.changed-files.outputs.changed_gems }}" | grep -q "^base$"; then
-              echo "Base gem changed, running all tests"
-              echo "matrix={\"gem\":$ALL_GEMS,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
-            else
-              CHANGED_ARRAY=$(echo "${{ steps.changed-files.outputs.changed_gems }}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-              echo "Running tests for changed gems: $CHANGED_ARRAY"
-              echo "matrix={\"gem\":$CHANGED_ARRAY,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
-            fi
+            CHANGED_GEMS_JSON=$(echo "${{ steps.changed-files.outputs.changed_gems }}" | jq -R -s -c 'split("\n")[:-1]')
+            echo "Changed gems detected: $CHANGED_GEMS_JSON"
+            echo "matrix={\"gem\":$CHANGED_GEMS_JSON,\"os\":[\"ubuntu-latest\"]}" >> $GITHUB_OUTPUT
           fi
 
   instrumentation:
