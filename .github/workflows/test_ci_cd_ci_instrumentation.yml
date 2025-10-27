@@ -45,11 +45,10 @@ jobs:
               CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
             fi
             
-            echo "Changed files: $CHANGED_FILES"
-            
             # Extract unique instrumentation gem names from changed files
             CHANGED_GEMS=$(echo "$CHANGED_FILES" | grep '^instrumentation/opentelemetry-instrumentation-' | cut -d'/' -f2 | sed 's/opentelemetry-instrumentation-//' | sort -u)
-            
+            echo "Changed gems: $CHANGED_GEMS"
+
             if [ -z "$CHANGED_GEMS" ]; then
               echo "run_all=false" >> $GITHUB_OUTPUT
               echo "changed_gems=" >> $GITHUB_OUTPUT
