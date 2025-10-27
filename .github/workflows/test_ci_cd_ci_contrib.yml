@@ -59,6 +59,7 @@ jobs:
       matrix:
         gem:
           - sql
+          - active_record
         os:
           - ubuntu-latest
     name: "helpers-${{ matrix.gem }} / ${{ matrix.os }}"
